@@ -39,4 +39,16 @@ interface ApiService {
 
     @GET("empleado/{oid}/empaque")
     suspend fun getEmpaque(@Path("oid") oid: Int): List<ProductoEmpaque>
+
+    @GET("ranking-actividad/{actividad}")
+    suspend fun getRankingActividad(@Path("actividad") actividad: String): List<EmpleadoRankingActividad>
+
+    @GET("con-meta-filtrado/{oid}/{actividad}")
+    suspend fun getConMetaFiltrado(@Path("oid") oid: Int, @Path("actividad") actividad: String): List<ActividadConMeta>
+
+    @GET("sin-meta-filtrado/{oid}/{actividad}")
+    suspend fun getSinMetaFiltrado(@Path("oid") oid: Int, @Path("actividad") actividad: String): List<ActividadSinMeta>
+
+    @GET("lectura-actividad/{oid}/{actividad}")
+    suspend fun getLecturaActividad(@Path("oid") oid: Int, @Path("actividad") actividad: String): LecturaActividad
 }
