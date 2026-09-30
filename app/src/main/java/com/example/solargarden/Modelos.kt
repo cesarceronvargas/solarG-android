@@ -97,3 +97,25 @@ data class LecturaActividad(
     val contribucion_shap: Double?,
     val texto: String?
 )
+
+/**
+ * Un punto del histórico de UNA actividad (Semana + Valor promedio esa
+ * semana -- PorcentajeMeta o ZActividad según el tipo). Viene de
+ * leer_historico_actividad() en cache_db.py.
+ */
+data class PuntoHistoricoActividad(
+    val Semana: String,
+    val Valor: Double
+)
+
+/**
+ * Eficiencia, Consistencia y Ritmo calculados SOLO con el histórico de
+ * una actividad específica. Viene de /atributos-actividad. Asistencia,
+ * Experiencia y Generalizacion no tienen equivalente por actividad, así
+ * que no vienen aquí -- se siguen tomando de Atributos (el general).
+ */
+data class AtributosActividad(
+    val Eficiencia: Int,
+    val Consistencia: Int,
+    val Ritmo: Int
+)

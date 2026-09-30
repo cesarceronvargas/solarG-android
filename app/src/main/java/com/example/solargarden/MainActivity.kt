@@ -191,6 +191,8 @@ fun PantallaDetalle(oid: Int, nombre: String, actividad: String, navController: 
     var tendenciaDiaria by remember { mutableStateOf<List<PuntoDiario>>(emptyList()) }
     var empaquePorProducto by remember { mutableStateOf<List<ProductoEmpaque>>(emptyList()) }
     var lecturaActividad by remember { mutableStateOf<LecturaActividad?>(null) }
+    var historicoActividad by remember { mutableStateOf<List<PuntoHistoricoActividad>>(emptyList()) }
+    var atributosActividad by remember { mutableStateOf<AtributosActividad?>(null) }
     var cargando by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -240,6 +242,8 @@ fun PantallaDetalle(oid: Int, nombre: String, actividad: String, navController: 
                 catch (e: Exception) { empaquePorProducto = emptyList() }
 
                 lecturaActividad = null
+                historicoActividad = emptyList()
+                atributosActividad = null
             } else {
                 // Con filtro: las 11 actividades del menú son todas de campo,
                 // así que no hay nada que mostrar de empaque.
@@ -267,6 +271,12 @@ fun PantallaDetalle(oid: Int, nombre: String, actividad: String, navController: 
                 // feature propia en el modelo).
                 try { lecturaActividad = RetrofitClient.api.getLecturaActividad(oid, actividad) }
                 catch (e: Exception) { lecturaActividad = null }
+
+                try { historicoActividad = RetrofitClient.api.getHistoricoActividad(oid, actividad) }
+                catch (e: Exception) { historicoActividad = emptyList() }
+
+                try { atributosActividad = RetrofitClient.api.getAtributosActividad(oid, actividad) }
+                catch (e: Exception) { atributosActividad = null }
             }
 
             val hayDatosCampo = diagnosticoCampo != null || conMeta.isNotEmpty() || sinMeta.isNotEmpty()
@@ -325,18 +335,42 @@ fun PantallaDetalle(oid: Int, nombre: String, actividad: String, navController: 
                         )
                     }
 
-                    if (historicoCampo.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text("Tendencia · últimas ${historicoCampo.size} semanas", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        GraficaLineaTendencia(historicoCampo)
-                    }
+                    run {
+                        // Cuando hay un filtro de actividad activo, la gráfica de
+                        // tendencia y 3 de los 6 atributos (Eficiencia, Consistencia,
+                        // Ritmo) se calculan SOLO con el histórico de esa actividad
+                        // (historicoActividad) en vez del histórico general de campo.
+                        val historicoAMostrar =
+                            if (hayFiltro) historicoActividad.map { PuntoHistorico(it.Semana, it.Valor, 0.0) }
+                            else historicoCampo
 
-                    if (atributosCampo != null) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text("Atributos del desempeño", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        ListaAtributos(atributosCampo!!)
+                        if (historicoAMostrar.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                if (hayFiltro) "Tendencia de $actividad · últimas ${historicoAMostrar.size} semanas"
+                                else "Tendencia · últimas ${historicoAMostrar.size} semanas",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            GraficaLineaTendencia(historicoAMostrar)
+                        }
+
+                        if (atributosCampo != null) {
+                            val atributosAMostrar =
+                                if (hayFiltro && atributosActividad != null) {
+                                    atributosCampo!!.copy(
+                                        Eficiencia = atributosActividad!!.Eficiencia,
+                                        Consistencia = atributosActividad!!.Consistencia,
+                                        Ritmo = atributosActividad!!.Ritmo
+                                    )
+                                } else {
+                                    atributosCampo!!
+                                }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("Atributos del desempeño", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ListaAtributos(atributosAMostrar)
+                        }
                     }
 
                     if (tendenciaDiaria.isNotEmpty()) {
@@ -783,12 +817,6 @@ fun TarjetaLecturaActividad(lectura: LecturaActividad) {
         colors = CardDefaults.cardColors(containerColor = colorTexto.copy(alpha = 0.08f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                "",
-                style = MaterialTheme.typography.labelMedium,
-                color = colorTexto
-            )
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 lectura.texto ?: "",
                 style = MaterialTheme.typography.bodyMedium

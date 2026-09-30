@@ -51,4 +51,10 @@ interface ApiService {
 
     @GET("lectura-actividad/{oid}/{actividad}")
     suspend fun getLecturaActividad(@Path("oid") oid: Int, @Path("actividad") actividad: String): LecturaActividad
+
+    @GET("historico-actividad/{oid}/{actividad}")
+    suspend fun getHistoricoActividad(@Path("oid") oid: Int, @Path("actividad") actividad: String): List<PuntoHistoricoActividad>
+
+    @GET("atributos-actividad/{oid}/{actividad}")
+    suspend fun getAtributosActividad(@Path("oid") oid: Int, @Path("actividad") actividad: String): AtributosActividad
 }
